@@ -1,2 +1,5 @@
 venv
 data
+module_2/kestra-wd
+module_2/tmp
+module_2/.env
