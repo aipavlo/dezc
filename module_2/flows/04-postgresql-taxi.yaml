@@ -44,6 +44,7 @@ tasks:
       type: io.kestra.plugin.core.runner.Process
     commands:
       - wget -qO- {{ vars.source }}/{{ inputs.taxi }}/{{ render(vars.file) }}.gz | gunzip > {{ render(vars.file) }}
+      - echo "== FILE SIZE ==" && ls -lh {{ render(vars.file) }}
 
   - id: if_yellow_taxi
     type: io.kestra.plugin.core.flow.If
