@@ -5,18 +5,20 @@ DROP VIEW IF EXISTS dwh.yellow_2024_ext;
 
 CREATE VIEW dwh.yellow_2024_ext AS
 SELECT *
-FROM file('import/yellow_tripdata_2024-*.parquet', 'Parquet');
+FROM file('import/yellow_tripdata_2024-*.parquet', 'Parquet')
+WHERE tpep_pickup_datetime >= toDateTime('2024-01-01 00:00:00')
+  AND tpep_pickup_datetime <  toDateTime('2024-07-01 00:00:00');
 
 -- Q1: Counting records 
 SELECT count() AS rows_2024
 FROM dwh.yellow_2024_ext;
--- 41169720
+-- 20332069
 
 -- Q4: Counting zero fare trips 
 SELECT count() AS rows_fare_0
 FROM dwh.yellow_2024_ext
 WHERE fare_amount = 0;
--- 17260
+-- 8333
 
 -- Materialized table raw
 DROP TABLE IF EXISTS dwh.yellow_2024_raw;
@@ -31,10 +33,10 @@ LIMIT 0;
 INSERT INTO dwh.yellow_2024_raw
 SELECT * FROM dwh.yellow_2024_ext;
 
-/* Sanity check */
+/* check */
 SELECT
-    (SELECT count() FROM dwh.yellow_2024_ext) AS ext_cnt, -- 41169720
-    (SELECT count() FROM dwh.yellow_2024_raw) AS raw_cnt; -- 41169720
+    (SELECT count() FROM dwh.yellow_2024_ext) AS ext_cnt, -- 20332069
+    (SELECT count() FROM dwh.yellow_2024_raw) AS raw_cnt; -- 20332069
 
 -- Q5 Partitioning and clustering
 DROP TABLE IF EXISTS dwh.yellow_2024_opt;
@@ -182,16 +184,16 @@ WHERE type = 'QueryFinish'
   OR log_comment = 'q6_raw_distinct_vendor'
   OR log_comment = 'q2_raw_two_cols'
   OR log_comment = 'q2_ext_two_cols')
-and read_rows != 0 -- not statistic
+and read_rows != 0 -- not statistic query
 ORDER BY event_time_microseconds desc;
 
 /*
 log_comment           |read_rows|read_bytes|result_rows|result_bytes|memory_usage|
 ----------------------+---------+----------+-----------+------------+------------+
-q6_opt_distinct_vendor|  1758861|  24624054|          3|         525|    17765769|
-q6_raw_distinct_vendor| 41169720| 383199980|          3|         270|     6088691|
-q2_raw_two_cols       | 41169720|  82339440|          1|         136|     5486803|
-q2_ext_two_cols       | 41169720| 692824596|          1|         136|    99256051|
+q6_opt_distinct_vendor|  1758861|  24624054|          3|         780|    16485136|
+q6_raw_distinct_vendor| 20332069| 194566856|          3|         270|     6519212|
+q2_raw_two_cols       | 20332069|  40664138|          1|         136|     5471331|
+q2_ext_two_cols       | 33894756| 567360581|          1|         136|   270389565|
 */
 
 /* Explain pruning */
