@@ -1,0 +1,28 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.10
+    container_name: clickhouse
+    hostname: clickhouse
+    environment:
+      CLICKHOUSE_DB: dwh
+      CLICKHOUSE_USER: dwh_user
+      CLICKHOUSE_PASSWORD: dwh_pass_123
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    stop_grace_period: 2m
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./clickhouse/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./data:/var/lib/clickhouse/user_files/import:ro
+
+volumes:
+  clickhouse_data:
+  clickhouse_logs:
