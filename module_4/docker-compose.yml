@@ -1,0 +1,56 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.10
+    container_name: clickhouse
+    hostname: clickhouse
+    environment:
+      CLICKHOUSE_DB: ${DWH_DB}
+      CLICKHOUSE_USER: ${DWH_USER}
+      CLICKHOUSE_PASSWORD: ${DWH_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    stop_grace_period: 2m
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./clickhouse/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./data:/var/lib/clickhouse/user_files/import:ro
+    deploy:
+      resources:
+        limits:
+          memory: 10G
+        reservations:
+          memory: 5G      
+
+  dbt:
+    build:
+      context: .
+      dockerfile: docker/dbt/Dockerfile
+      args:
+        DBT_CORE_VERSION: ${DBT_CORE_VERSION}
+        DBT_CH_VERSION: ${DBT_CH_VERSION}
+    container_name: dbt
+    hostname: dbt
+    image: local/dbt-clickhouse:${DBT_CORE_VERSION}-${DBT_CH_VERSION}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DBT_PROFILES_DIR: /usr/app/dbt
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    working_dir: /usr/app/dbt
+    volumes:
+      - ./dbt:/usr/app/dbt
+
+volumes:
+  clickhouse_data:
+  clickhouse_logs:

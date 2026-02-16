@@ -4,3 +4,10 @@ module_2/kestra-wd
 module_2/tmp
 .env
 module_2/.env
+module_4/.env
+module_4/dbt/dbt_packages
+module_4/dbt/logs
+module_4/dbt/package-lock.yml
+module_4/dbt/.user.yml
+module_4/dbt/target
+*.duckdb
