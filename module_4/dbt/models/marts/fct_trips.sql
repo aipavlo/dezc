@@ -57,5 +57,9 @@ left join {{ ref('dim_zones') }} as dz
 
 {% if is_incremental() %}
   -- Only process new trips based on pickup datetime
-  where trips.pickup_datetime > (select max(pickup_datetime) from {{ this }})
+where trips.pickup_datetime >
+        coalesce(
+          (select max(pickup_datetime) from {{ this }}),
+          toDateTime64('1970-01-01 00:00:00', 6)
+        )
 {% endif %}

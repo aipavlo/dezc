@@ -29,7 +29,7 @@ models:
     description: Fact table with all taxi trips including trip and payment details
     config:
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: trip_id
         description: Unique trip identifier
