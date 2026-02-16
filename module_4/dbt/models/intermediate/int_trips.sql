@@ -2,8 +2,11 @@
 -- Demonstrates enrichment and surrogate key generation
 -- Note: Data quality analysis available in analyses/trips_data_quality.sql
 {{ config(
-    engine='MergeTree()',
-    order_by='tuple()'
+    materialized='table',
+    engine='ReplacingMergeTree(_ver)',
+    order_by=['trip_id'],
+    partition_by=['toYYYYMM(pickup_datetime)'],
+    post_hook=["OPTIMIZE TABLE {{ this }} FINAL"]
 ) }}
 
 
@@ -13,12 +16,6 @@ with unioned as (
 
 payment_types as (
     select * from {{ ref('payment_type_lookup') }}
-),
-
-deduped as (
-    select *
-    from unioned
-    limit 1 by vendor_id, pickup_datetime, pickup_location_id, service_type
 ),
 
 cleaned_and_enriched as (
@@ -36,7 +33,7 @@ cleaned_and_enriched as (
         u.dropoff_location_id,
 
         -- Timestamps
-        u.pickup_datetime,
+        assumeNotNull(u.pickup_datetime) as pickup_datetime,
         u.dropoff_datetime,
 
         -- Trip details
@@ -57,9 +54,11 @@ cleaned_and_enriched as (
 
         -- Enrich with payment type description
         coalesce(u.payment_type, 0) as payment_type,
-        coalesce(pt.description, 'Unknown') as payment_type_description
+        coalesce(pt.description, 'Unknown') as payment_type_description,
 
-    from deduped u
+        assumeNotNull(-toInt64(toUnixTimestamp64Micro(coalesce(u.dropoff_datetime, u.pickup_datetime)))) as _ver
+
+    from unioned u
     left join payment_types pt
         on coalesce(u.payment_type, 0) = pt.payment_type
 )

@@ -1,5 +1,12 @@
 -- Union green and yellow taxi data into a single dataset
 -- Demonstrates how to combine data from multiple sources with slightly different schemas
+{{ config(
+    materialized='incremental',
+    incremental_strategy='append',
+    engine='MergeTree()',
+    partition_by='toYYYYMM(pickup_datetime)',
+    order_by='tuple()'
+) }}
 
 with green_trips as (
     select
@@ -24,6 +31,9 @@ with green_trips as (
         payment_type,
         'Green' as service_type
     from {{ ref('stg_green_tripdata') }}
+    {% if is_incremental() %}
+    where pickup_datetime > (select max(pickup_datetime) from {{ this }})
+    {% endif %}    
 ),
 
 yellow_trips as (
@@ -49,6 +59,9 @@ yellow_trips as (
         payment_type,
         'Yellow' as service_type
     from {{ ref('stg_yellow_tripdata') }}
+    {% if is_incremental() %}
+    where pickup_datetime > (select max(pickup_datetime) from {{ this }})
+    {% endif %}    
 )
 
 select * from green_trips
