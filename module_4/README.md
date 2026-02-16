@@ -25,6 +25,7 @@ Create a `.env` file (same values for ClickHouse and dbt):
 DWH_DB=
 DWH_USER=
 DWH_PASSWORD=
+```
 
 ## Run dbt
 dbt deps
@@ -33,4 +34,25 @@ dbt build --target prod
 ## Answers
 Q1: dbt run --select int_trips_unioned builds which models?
 
-Answer: int_trips_unioned only.
+int_trips_unioned only.
+
+
+Q2: New value 6 appears in payment_type. What happens on dbt test?
+
+dbt fails the test with non-zero exit code
+
+Q3: Count of records in fct_monthly_zone_revenue
+
+12184
+
+Q4: Zone with highest revenue for Green taxis in 2020
+
+East Harlem North
+
+Q5: Total trips for Green taxis in October 2019
+
+384624
+
+Q6: Count of records in stg_fhv_tripdata where dispatching_base_num IS NULL
+
+43244693
