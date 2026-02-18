@@ -2,11 +2,20 @@
 -- Demonstrates enrichment and surrogate key generation
 -- Note: Data quality analysis available in analyses/trips_data_quality.sql
 {{ config(
-    materialized='table',
-    engine='ReplacingMergeTree(_ver)',
-    order_by=['trip_id'],
-    partition_by=['toYYYYMM(pickup_datetime)'],
-    post_hook=["OPTIMIZE TABLE {{ this }} FINAL"]
+    materialized='incremental',
+    incremental_strategy='append',
+    unique_key='trip_id',
+    engine="ReplacingMergeTree(dropoff_datetime)",
+    order_by="(trip_id)",
+    partition_by="toYYYYMM(pickup_datetime)",
+    on_schema_change='append_new_columns',
+    pre_hook=[
+      "{{ create_payment_type_dictionary() }}",
+      "SYSTEM RELOAD DICTIONARY {{ target.schema }}.payment_type_dict"
+    ],
+    post_hook=[
+      "OPTIMIZE TABLE {{ this }} FINAL"
+    ]
 ) }}
 
 
@@ -54,13 +63,24 @@ cleaned_and_enriched as (
 
         -- Enrich with payment type description
         coalesce(u.payment_type, 0) as payment_type,
-        coalesce(pt.description, 'Unknown') as payment_type_description,
+        toLowCardinality(
+        dictGetStringOrDefault(
+                            '{{ target.schema }}.payment_type_dict',
+                            'description',
+                            toUInt64(coalesce(u.payment_type, 0)),
+                            'Unknown'
+                                    )
+        ) as payment_type_description,
 
         assumeNotNull(-toInt64(toUnixTimestamp64Micro(coalesce(u.dropoff_datetime, u.pickup_datetime)))) as _ver
 
     from unioned u
-    left join payment_types pt
-        on coalesce(u.payment_type, 0) = pt.payment_type
+    where u.pickup_datetime >= (
+    select coalesce(
+        max(pickup_datetime),
+        toDateTime64('1970-01-01 00:00:00', 6)
+    ) AS pickup_datetime
+    from {{ ref('int_trips_unioned') }}
+    )
 )
-
 select * from cleaned_and_enriched
