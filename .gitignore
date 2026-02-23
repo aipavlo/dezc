@@ -11,3 +11,13 @@ module_4/dbt/package-lock.yml
 module_4/dbt/.user.yml
 module_4/dbt/target
 *.duckdb
+*.duckdb
+*.db
+duckdb.db
+**/duckdb.db
+.bruin.yml
+logs/runs
+logs/*.log
+__pycache__/
+*.py[cod]
+logs/queries
