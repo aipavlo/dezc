@@ -3,6 +3,7 @@ data
 module_2/kestra-wd
 module_2/tmp
 .env
+.venv
 module_2/.env
 module_4/.env
 module_4/dbt/dbt_packages
@@ -15,6 +16,7 @@ module_4/dbt/target
 *.db
 duckdb.db
 **/duckdb.db
+**/.venv
 .bruin.yml
 logs/runs
 logs/*.log
