@@ -11,6 +11,7 @@ module_4/dbt/logs
 module_4/dbt/package-lock.yml
 module_4/dbt/.user.yml
 module_4/dbt/target
+module_6/data
 *.duckdb
 *.duckdb
 *.db
