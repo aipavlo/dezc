@@ -1,5 +1,5 @@
 venv
-data
+data/raw/
 module_2/kestra-wd
 module_2/tmp
 .env
